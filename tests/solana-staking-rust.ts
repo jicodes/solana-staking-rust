@@ -16,13 +16,14 @@ describe("solana-staking-rust", () => {
   const connection = new Connection("http://127.0.0.1:8899", "confirmed");
 
   // const mintKeypair = Keypair.generate();
+  // console.log("Mint Keypair:", mintKeypair);
+
   const mintKeypair = Keypair.fromSecretKey(
     new Uint8Array([
-      118, 145, 161, 133, 222, 110, 174, 88, 125, 155, 124, 153, 212, 242, 53,
-      243, 185, 166, 192, 225, 12, 25, 212, 41, 111, 109, 142, 131, 236, 114,
-      15, 178, 62, 49, 151, 124, 55, 241, 146, 233, 101, 105, 49, 204, 240, 160,
-      210, 130, 87, 206, 22, 154, 55, 221, 196, 158, 202, 210, 176, 210, 55, 63,
-      187, 32,
+      98, 95, 204, 150, 109, 247, 95, 158, 45, 86, 236, 146, 220, 77, 184, 102,
+      35, 61, 14, 143, 135, 153, 23, 239, 161, 143, 135, 210, 127, 57, 246, 87,
+      12, 40, 86, 214, 25, 110, 147, 17, 88, 215, 95, 46, 188, 237, 215, 232,
+      131, 118, 211, 197, 13, 28, 79, 224, 118, 29, 3, 135, 230, 3, 143, 190,
     ]),
   );
 
@@ -87,7 +88,6 @@ describe("solana-staking-rust", () => {
       program.programId,
     );
 
-
     const tx = await program.methods
       .stake(new anchor.BN(1))
       .signers([payer.payer])
@@ -99,6 +99,55 @@ describe("solana-staking-rust", () => {
         mint: mintKeypair.publicKey,
       })
       .rpc();
+    console.log("Your transaction signature", tx);
+  });
+
+  it("Should destake and distribute reward", async () => {
+    let userTokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payer.payer,
+      mintKeypair.publicKey,
+      payer.publicKey,
+    );
+
+    let [stakeInfoAccount] = PublicKey.findProgramAddressSync(
+      [Buffer.from("stake_info"), payer.publicKey.toBuffer()],
+      program.programId,
+    );
+
+    let [stakeAccount] = PublicKey.findProgramAddressSync(
+      [Buffer.from("token"), payer.publicKey.toBuffer()],
+      program.programId,
+    );
+
+    let [vaultAccount] = PublicKey.findProgramAddressSync(
+      [Buffer.from("vault")],
+      program.programId,
+    );
+
+    // mint some SPL token to the vault, so that we can distribute it as reward
+    await mintTo(
+      connection,
+      payer.payer,
+      mintKeypair.publicKey,
+      vaultAccount,
+      payer.payer,
+      1e21,
+    );
+
+    const tx = await program.methods
+      .destake()
+      .signers([payer.payer])
+      .accounts({
+        stakeInfoAccount,
+        stakeAccount,
+        userTokenAccount: userTokenAccount.address,
+        vaultAccount,
+        signer: payer.publicKey,
+        mint: mintKeypair.publicKey,
+      })
+      .rpc();
+
     console.log("Your transaction signature", tx);
   });
 });
