@@ -1,4 +1,4 @@
-# Solana SPL Token Staking in Rust(Anchor)
+# Solana SPL Token Staking Program in Rust(Anchor)
 
 This project implements a Solana SPL token staking program using the Anchor
 framework. The program allows users to stake their SPL tokens, earn rewards
