@@ -1,6 +1,9 @@
 # Solana SPL Token Staking in Rust(Anchor)
 
-This project implements a Solana SPL token staking program using the Anchor framework. The program allows users to stake their SPL tokens, earn rewards based on the staking duration, and unstake their tokens along with the earned rewards.
+This project implements a Solana SPL token staking program using the Anchor
+framework. The program allows users to stake their SPL tokens, earn rewards
+based on the staking duration, and unstake their tokens along with the earned
+rewards.
 
 ## Features
 
@@ -32,13 +35,16 @@ The program consists of three main instructions:
 The image above illustrates the account structure of the staking program:
 
 1. SPL Token Account (Associated Token Account):
+
    - Owner: User Account
 
 2. SPL Token Vault Account:
+
    - Owned by: Staking Program
    - Stores reward tokens
 
 3. Stake Info Account:
+
    - Owned by: Staking Program
    - Stores staking information for each user
 
@@ -46,21 +52,26 @@ The image above illustrates the account structure of the staking program:
    - Owned by: Staking Program
    - Holds staked tokens for each user
 
-Note: The SPL Token Vault Account, Stake Info Account, and User-specific Stake Account are all owned by the Staking Program.
+Note: The SPL Token Vault Account, Stake Info Account, and User-specific Stake
+Account are all owned by the Staking Program.
 
 ## Getting Started
 
 1. Install dependencies:
+
    ```
    npm install
    ```
 
 2. Build the program:
+
    ```
    anchor build
    ```
 
-3. Deploy the program to your desired Solana cluster (devnet, testnet, or mainnet):
+3. Deploy the program to your desired Solana cluster (devnet, testnet, or
+   mainnet):
+
    ```
    anchor deploy
    ```
@@ -72,7 +83,8 @@ Note: The SPL Token Vault Account, Stake Info Account, and User-specific Stake A
 
 ## Test Setup
 
-Before running the tests, you need to create an SPL token mint and use its secret key in the test file. Follow these steps:
+Before running the tests, you need to create an SPL token mint and use its
+secret key in the test file. Follow these steps:
 
 1. Uncomment the `createMintToken()` function call in the first test.
 2. Run the test once to create the mint:
@@ -85,7 +97,7 @@ Before running the tests, you need to create an SPL token mint and use its secre
    const mintKeypair = Keypair.fromSecretKey(
      new Uint8Array([
        // Paste the copied secret key here
-     ])
+     ]),
    );
    ```
 5. Comment out the `createMintToken()` function call again.
@@ -94,7 +106,15 @@ Before running the tests, you need to create an SPL token mint and use its secre
    anchor test
    ```
 
-## Usage
+## Future work
 
-To interact with the program, you can use the Anchor client in your JavaScript/TypeScript application. Here's a basic example of how to stake tokens:
+To enhance this project, we plan to:
 
+1. Develop a frontend application to interact with the Solana Anchor program:
+   - Create a user-friendly interface for staking and unstaking tokens
+   - Display real-time staking information and rewards
+   - Implement wallet connection functionality
+
+## License
+
+This project is licensed under the MIT License.
