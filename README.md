@@ -1,17 +1,19 @@
 # Solana SPL Token Staking Program in Rust(Anchor)
 
-This project implements a Solana SPL token staking program using the Anchor
-framework. The program allows users to stake their SPL tokens, earn rewards
-based on the staking duration, and unstake their tokens along with the earned
-rewards.
+
+## Project Purpose
+
+This project serves as an exploration of Decentralized Finance (DeFi) concepts on the Solana blockchain, while showcasing the use of Rust and the Anchor framework. Key objectives include:
+
+1. Demonstrating Solana's high-performance capabilities in a DeFi context
+2. Implementing core DeFi functionality (staking, rewards) using Rust and Anchor
+3. Exploring Solana's Program Derived Addresses (PDAs) for secure token management
+4. Providing a foundation for more complex DeFi applications on Solana
+5. Serving as a learning resource for developers interested in Solana DeFi development
 
 ## Features
 
-- Stake SPL tokens to a user-specific stake account
-- Calculate rewards based on staking duration (1 token per slot)
-- Unstake tokens and receive rewards
-- Utilizes Solana's Program Derived Addresses (PDAs) for secure token management
-- Stake info account to store staking time and staked state for each user
+This project implements a Solana SPL token staking program using the Anchor framework. The program allows users to stake their SPL tokens, earn rewards based on the staking duration, and unstake their tokens along with the earned rewards.
 
 ## Program Structure
 
