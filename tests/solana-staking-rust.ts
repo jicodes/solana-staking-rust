@@ -2,8 +2,11 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SolanaStakingRust } from "../target/types/solana_staking_rust";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { createMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
+import {
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+} from "@solana/spl-token";
 
 describe("solana-staking-rust", () => {
   // Configure the client to use the local cluster.
@@ -11,12 +14,15 @@ describe("solana-staking-rust", () => {
   anchor.setProvider(provider);
   const payer = provider.wallet as anchor.Wallet;
   const connection = new Connection("http://127.0.0.1:8899", "confirmed");
+
+  // const mintKeypair = Keypair.generate();
   const mintKeypair = Keypair.fromSecretKey(
     new Uint8Array([
-      233, 17, 81, 131, 170, 54, 236, 195, 63, 232, 175, 37, 50, 127, 112, 122,
-      0, 136, 28, 97, 220, 51, 237, 143, 170, 230, 221, 181, 187, 237, 244, 189,
-      25, 69, 97, 249, 57, 196, 2, 65, 198, 8, 64, 121, 55, 14, 22, 131, 71, 19,
-      129, 233, 18, 143, 197, 186, 179, 27, 80, 241, 92, 170, 255, 189,
+      118, 145, 161, 133, 222, 110, 174, 88, 125, 155, 124, 153, 212, 242, 53,
+      243, 185, 166, 192, 225, 12, 25, 212, 41, 111, 109, 142, 131, 236, 114,
+      15, 178, 62, 49, 151, 124, 55, 241, 146, 233, 101, 105, 49, 204, 240, 160,
+      210, 130, 87, 206, 22, 154, 55, 221, 196, 158, 202, 210, 176, 210, 55, 63,
+      187, 32,
     ]),
   );
 
@@ -47,6 +53,48 @@ describe("solana-staking-rust", () => {
       .initialize()
       .accounts({
         tokenVaultAccount: vaultAccount,
+        signer: payer.publicKey,
+        mint: mintKeypair.publicKey,
+      })
+      .rpc();
+    console.log("Your transaction signature", tx);
+  });
+
+  it("Should stake", async () => {
+    let userTokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payer.payer,
+      mintKeypair.publicKey,
+      payer.publicKey,
+    );
+
+    await mintTo(
+      connection,
+      payer.payer,
+      mintKeypair.publicKey,
+      userTokenAccount.address,
+      payer.payer,
+      1e11,
+    );
+
+    let [stakeInfoAccount] = PublicKey.findProgramAddressSync(
+      [Buffer.from("stake_info"), payer.publicKey.toBuffer()],
+      program.programId,
+    );
+
+    let [stakeAccount] = PublicKey.findProgramAddressSync(
+      [Buffer.from("token"), payer.publicKey.toBuffer()],
+      program.programId,
+    );
+
+
+    const tx = await program.methods
+      .stake(new anchor.BN(1))
+      .signers([payer.payer])
+      .accounts({
+        stakeInfoAccount,
+        stakeAccount,
+        userTokenAccount: userTokenAccount.address,
         signer: payer.publicKey,
         mint: mintKeypair.publicKey,
       })
