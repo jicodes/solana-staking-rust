@@ -149,7 +149,7 @@ pub struct Stake<'info> {
     #[account(
         init_if_needed,
         payer = signer,
-        space = 8 * std::mem::size_of::<StakeInfoAccount>(),
+        space = 8 + std::mem::size_of::<StakeInfoAccount>(),
         seeds = [constants::STAKE_INFO_SEED, signer.key().as_ref()],
         bump,
     )]
