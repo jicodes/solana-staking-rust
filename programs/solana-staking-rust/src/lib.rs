@@ -53,6 +53,72 @@ pub mod solana_staking_rust {
             stake_amount,
         )?;
 
+        Ok(())
+    }
+
+    pub fn destake(ctx: Context<DeStake>) -> Result<()> {
+        let stake_info_account = &mut ctx.accounts.stake_info_account;
+
+        if !stake_info_account.is_staked {
+            return Err(ErrorCode::TokensNotStaked.into());
+        }
+        // calculate the reward
+        let clock = Clock::get().unwrap();
+        let stake_duration = clock.slot - stake_info_account.stake_at_slot;
+        // simply based on the stake duration: 1 token per slot
+        let reward = stake_duration
+            .checked_mul(10u64.pow(ctx.accounts.mint.decimals as u32))
+            .unwrap();
+
+        // when signing on behalf of a PDA for the CPI,
+        // we need to provide the seeds and bump to the signer and
+        // use CpiContext::new_with_signer instead of CpiContext::new
+
+        let vault_bump = ctx.bumps.token_vault_account;
+        let seeds = &[constants::VAULT_SEED, &[vault_bump]];
+        let signer = &[&seeds[..]];
+
+        // do cross-program invocation to transfer reward from vault account to user token account
+        transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    from: ctx.accounts.token_vault_account.to_account_info(),
+                    to: ctx.accounts.user_token_account.to_account_info(),
+                    authority: ctx.accounts.token_vault_account.to_account_info(),
+                },
+                signer,
+            ),
+            reward,
+        )?;
+
+        // do cross-program invocation to transfer staked tokens from user stake account to user token account
+        let staker = ctx.accounts.signer.key();
+        let stake_account_bump = ctx.bumps.stake_account;
+        let seeds = &[
+            constants::TOKEN_SEED,
+            staker.as_ref(),
+            &[stake_account_bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let stake_amount = ctx.accounts.stake_account.amount;
+
+        transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    from: ctx.accounts.stake_account.to_account_info(),
+                    to: ctx.accounts.user_token_account.to_account_info(),
+                    authority: ctx.accounts.stake_account.to_account_info(),
+                },
+                signer,
+            ),
+            stake_amount,
+        )?;
+
+        stake_info_account.is_staked = false;
+        stake_info_account.stake_at_slot = clock.slot;
 
         Ok(())
     }
@@ -119,6 +185,45 @@ pub struct Stake<'info> {
 pub struct StakeInfoAccount {
     pub stake_at_slot: u64, // the slot at which the stake was made
     pub is_staked: bool,
+}
+
+#[derive(Accounts)]
+pub struct DeStake<'info> {
+    #[account(
+        mut,
+        seeds = [constants::VAULT_SEED],
+        bump,
+    )]
+    pub token_vault_account: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [constants::STAKE_INFO_SEED, signer.key().as_ref()],
+        bump,
+    )]
+    pub stake_info_account: Account<'info, StakeInfoAccount>,
+
+    #[account(
+        mut,
+        seeds = [constants::TOKEN_SEED, signer.key().as_ref()],
+        bump,
+    )]
+    pub stake_account: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        associated_token::mint = mint,
+        associated_token::authority = signer,
+    )]
+    pub user_token_account: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub signer: Signer<'info>,
+
+    pub mint: Account<'info, Mint>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[error_code]
